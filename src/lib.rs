@@ -5,28 +5,33 @@ use std::fs;
 pub struct Config {
     pub query: String,
     pub filename: String,
-    pub case_sensitive: bool
+    pub case_sensitive: bool,
 }
 
 impl Config {
-    pub fn new(args: Option<Vec<String>>) -> Result<Config, Box<dyn Error>> {
-        parse_args(args)
+    pub fn new() -> Result<Config, Box<dyn Error>> {
+        parse_args()
     }
 }
 
-pub fn parse_args(args: Option<Vec<String>>) -> Result<Config, Box<dyn Error>> {
-    let derived_args: Vec<String> = if None == args {
-        env::args().collect()
-    } else {
-        args.unwrap()
-    };
+pub fn parse_args() -> Result<Config, Box<dyn Error>> {
+    let mut derived_args = env::args();
 
     if derived_args.len() < 3 {
         return Err("not enough arguments provided!".into());
     }
 
-    let query = derived_args[1].clone();
-    let filename = derived_args[2].clone();
+    derived_args.next();
+
+    let query = match derived_args.next() {
+        Some(arg) => arg,
+        None => return Err("Didn't get a query string".into()),
+    };
+
+    let filename = match derived_args.next() {
+        Some(arg) => arg,
+        None => return Err("Didn't get a file name".into()),
+    };
 
     let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
@@ -58,7 +63,7 @@ pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a st
 }
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    let config = match parse_args(None) {
+    let config = match parse_args() {
         Ok(config) => config,
         Err(err) => return Err(err),
     };
